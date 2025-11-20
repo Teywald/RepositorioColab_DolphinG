@@ -33,7 +33,7 @@ def actualizar_parametros_servicios(id_parametros_cotizacion, valor_noche_cabana
         conn.close()
         return
 
-    # 5) Si ta todo bien actualiza
+    # 3) Si ta todo bien actualiza
     cursor.execute("""
         UPDATE ParametrosCotizacion
         SET ValorNocheCabanaTempAlta = ?,

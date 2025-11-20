@@ -96,15 +96,13 @@ class App(tk.Tk):
             style='Lateral.TButton'
         ).pack(fill="x", padx=20, pady=10)
 
-        #Boton para reservas
+        #Boton para buscar reserva
         ttk.Button(
             self.panel,
             text="Reservas",
             command=self.pantalla_reserva,
             style='Lateral.TButton'
         ).pack(fill="x", padx=20, pady=10)
-        
-        #Boton para 
         
         """Aqui seguira luego, calendario, repositorio historico de las
         cotizaciones y demas funcionalidades que ameriten"""
@@ -179,6 +177,13 @@ class App(tk.Tk):
         ttk.Label(self.frame_datos, textvariable=self.noches_var,
                   font=("Segoe UI", 18, "bold")).grid(row=9, column=1, sticky="W")
         
+        # Boton Crear Reserva
+        ttk.Button(
+            self.frame_datos,
+            text="Crear Reserva",
+            command=lambda: crear_reserva(self.nombre_cliente.get(), self.cedula.get(), self.telefono.get(), self.correo.get(), self.direccion.get(), self.num_personas.get(), self.fecha_ent.get(), self.fecha_sal.get())
+        ).grid(row=10, column=1, columnspan=2, pady=20)
+        
         # Botón calcular
         ttk.Button(
             self.frame_datos,
@@ -188,34 +193,10 @@ class App(tk.Tk):
 
     # Pantalla de Reservas
     def pantalla_reserva(self):
-        
-        frame = ttk.Frame(self.contenedor, style='BG.TFrame')
-        frame.grid(row=0, column=0, padx=20, pady=20)   
-        
-        def cargar_datos():
-            # Conectar a la base de datos
-            conn = sqlite3.connect(DB_PATH)
-            cursor = conn.cursor()
 
-            # Ejecutar la consulta
-            cursor.execute("SELECT * FROM Reserva")
-            filas = cursor.fetchall()
-
-            # Limpiar el treeview antes de insertar (si ya tiene datos)
-            for i in tree.get_children():
-                tree.ttk.delete(i)
-
-            # Insertar filas
-            for fila in filas:
-                a = 0
-                tree.insert("", "end", values=fila)
-                ttk.Button(self.frame_datos, text="Eliminar",).grid(row=a, column=11, columnspan=1, pady=20)
-
-            # Cerrar conexión
-            conn.close()
-        
         self.limpiar_pantalla()
 
+        # Marco principal de la pantalla
         frame = ttk.Frame(self.contenedor, style='BG.TFrame')
         frame.grid(row=0, column=0, padx=20, pady=20)
 
@@ -224,18 +205,59 @@ class App(tk.Tk):
             text="Buscar Reserva",
             font=("Segoe UI", 20),
             background="#F9F5F1"
-        ).grid(row=0, column=0, pady=20)
+        ).grid(row=0, column=0, pady=20, columnspan=3)
 
-        columnas = ("Id", "Cliente", "Documento", "Contacto", "Correo", "Direccion", "Personas", "FechaLlegada", "FechaSalida")
-        tree = ttk.Treeview(frame, columns=columnas, show="headings")
-        
+        # ---------------------- BUSQUEDA ----------------------
+        self.busqueda = tk.StringVar()
+
+        ttk.Label(frame, text="Búsqueda").grid(row=1, column=0, sticky="W")
+        ttk.Entry(frame, textvariable=self.busqueda, width=30).grid(row=1, column=1, padx=5)
+
+        # ---------------------- TABLA -------------------------
+        columnas = ("Id", "Cliente", "Documento", "Contacto", "Correo", "Direccion",
+                    "Personas", "FechaLlegada", "FechaSalida")
+
+        self.tree = ttk.Treeview(frame, columns=columnas, show="headings", height=10)
+
         for col in columnas:
-            tree.heading(col, text=col.capitalize())
-            tree.column(col, width=120)
-        
-        tree.grid(row=2, column=0, pady=10)
-        
-        cargar_datos()
+            self.tree.heading(col, text=col)
+            self.tree.column(col, width=120)
+
+        self.tree.grid(row=2, column=0, columnspan=3, pady=10)
+
+        #Funcion Cargar
+        def cargar_datos(filtro=""):
+            # limpiar tabla
+            for item in self.tree.get_children():
+                self.tree.delete(item)
+
+            conn = sqlite3.connect(DB_PATH)
+            cursor = conn.cursor()
+
+            if filtro == "":
+                cursor.execute("SELECT * FROM Reserva")
+            else:
+                cursor.execute("""
+                    SELECT * FROM Reserva
+                    WHERE NombreCliente LIKE ? OR Documento LIKE ?
+                """, (f"%{filtro}%", f"%{filtro}%"))
+
+            filas = cursor.fetchall()
+
+            for fila in filas:
+                self.tree.insert("", "end", values=fila + ("Eliminar",))
+
+            conn.close()
+
+        # Botón buscar (ya conoce cargar_datos)
+        ttk.Button(
+            frame,
+            text="Buscar",
+            command=lambda: cargar_datos(self.busqueda.get())
+        ).grid(row=1, column=2, padx=10)
+
+        # Cargar todas las reservas al abrir pantalla
+        cargar_datos("")
 
     # -------------------------------------------------
     # BACKEND UI

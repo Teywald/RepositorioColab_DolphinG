@@ -73,18 +73,6 @@ def obtener_reservas():
     conn.close()
     return reservas
 
-
-def buscar_reserva(id_reserva):
-    conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
-
-    cursor.execute("SELECT * FROM Reserva WHERE Id = ?", (id_reserva,))
-    reserva = cursor.fetchone()
-
-    conn.close()
-    return reserva
-
-
 def actualizar_reserva(id_reserva, nuevo_contacto, nueva_fecha_llegada, nueva_fecha_salida, nuevo_num_personas):
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()

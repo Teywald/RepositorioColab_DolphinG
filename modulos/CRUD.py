@@ -4,6 +4,7 @@ from datetime import datetime
 import os
 
 DB_PATH = os.path.join(os.environ["LOCALAPPDATA"], "dolphin_green.db")
+
 def fechas_validas(fecha_llegada, fecha_salida):
     try:
         f1 = datetime.strptime(fecha_llegada, "%Y-%m-%d")

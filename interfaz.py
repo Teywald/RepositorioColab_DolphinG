@@ -1,7 +1,11 @@
 from datetime import datetime
+import sqlite3
 import tkinter as tk
 from tkinter import ttk
+import os
+from modulos.CRUD import *
 
+DB_PATH = os.path.join(os.environ["LOCALAPPDATA"], "dolphin_green.db")
 
 # ---------------- Backend ----------------
 def calcular_noches(entrada, salida):
@@ -92,13 +96,15 @@ class App(tk.Tk):
             style='Lateral.TButton'
         ).pack(fill="x", padx=20, pady=10)
 
-        #Boton para buscar reserva
+        #Boton para reservas
         ttk.Button(
             self.panel,
             text="Reservas",
-            command=self.pantalla_buscar_reserva,
+            command=self.pantalla_reserva,
             style='Lateral.TButton'
         ).pack(fill="x", padx=20, pady=10)
+        
+        #Boton para 
         
         """Aqui seguira luego, calendario, repositorio historico de las
         cotizaciones y demas funcionalidades que ameriten"""
@@ -130,6 +136,7 @@ class App(tk.Tk):
         self.cedula = tk.IntVar()
         self.telefono = tk.StringVar()
         self.correo = tk.StringVar()
+        self.direccion = tk.StringVar()
         self.num_personas = tk.IntVar()
         self.fecha_ent = tk.StringVar()
         self.fecha_sal = tk.StringVar()
@@ -150,34 +157,63 @@ class App(tk.Tk):
         # Correo...
         ttk.Label(self.frame_datos, text="Correo").grid(row=4, column=0, sticky='W')
         ttk.Entry(self.frame_datos, textvariable=self.correo).grid(row=4, column=1)
+        
+        # Direccion...
+        ttk.Label(self.frame_datos, text="Direccion").grid(row=5, column=0, sticky='W')
+        ttk.Entry(self.frame_datos, textvariable=self.direccion).grid(row=5, column=1)
 
         # Número de personas...
-        ttk.Label(self.frame_datos, text="Número de Personas").grid(row=5, column=0, sticky='W')
-        ttk.Entry(self.frame_datos, textvariable=self.num_personas).grid(row=5, column=1)
+        ttk.Label(self.frame_datos, text="Número de Personas").grid(row=6, column=0, sticky='W')
+        ttk.Entry(self.frame_datos, textvariable=self.num_personas).grid(row=6, column=1)
 
         # Fecha entrada...
-        ttk.Label(self.frame_datos, text="Fecha Entrada (YYYY-MM-DD)").grid(row=6, column=0, sticky='W')
-        ttk.Entry(self.frame_datos, textvariable=self.fecha_ent).grid(row=6, column=1)
+        ttk.Label(self.frame_datos, text="Fecha Entrada (YYYY-MM-DD)").grid(row=7, column=0, sticky='W')
+        ttk.Entry(self.frame_datos, textvariable=self.fecha_ent).grid(row=7, column=1)
 
         # Fecha salida...
-        ttk.Label(self.frame_datos, text="Fecha Salida (YYYY-MM-DD)").grid(row=7, column=0, sticky='W')
-        ttk.Entry(self.frame_datos, textvariable=self.fecha_sal).grid(row=7, column=1)
+        ttk.Label(self.frame_datos, text="Fecha Salida (YYYY-MM-DD)").grid(row=8, column=0, sticky='W')
+        ttk.Entry(self.frame_datos, textvariable=self.fecha_sal).grid(row=8, column=1)
 
         # Noches...
-        ttk.Label(self.frame_datos, text="Noches:").grid(row=8, column=0, sticky="W")
+        ttk.Label(self.frame_datos, text="Noches:").grid(row=9, column=0, sticky="W")
         ttk.Label(self.frame_datos, textvariable=self.noches_var,
-                  font=("Segoe UI", 18, "bold")).grid(row=8, column=1, sticky="W")
-
+                  font=("Segoe UI", 18, "bold")).grid(row=9, column=1, sticky="W")
+        
         # Botón calcular
         ttk.Button(
             self.frame_datos,
             text="Calcular Noches",
             command=self.actualizar_noches
-        ).grid(row=9, column=0, columnspan=2, pady=20)
+        ).grid(row=11, column=0, columnspan=1, pady=20)
 
+    # Pantalla de Reservas
+    def pantalla_reserva(self):
+        
+        frame = ttk.Frame(self.contenedor, style='BG.TFrame')
+        frame.grid(row=0, column=0, padx=20, pady=20)   
+        
+        def cargar_datos():
+            # Conectar a la base de datos
+            conn = sqlite3.connect(DB_PATH)
+            cursor = conn.cursor()
 
-    # Pantalla de "Buscar Reservas"
-    def pantalla_buscar_reserva(self):
+            # Ejecutar la consulta
+            cursor.execute("SELECT * FROM Reserva")
+            filas = cursor.fetchall()
+
+            # Limpiar el treeview antes de insertar (si ya tiene datos)
+            for i in tree.get_children():
+                tree.ttk.delete(i)
+
+            # Insertar filas
+            for fila in filas:
+                a = 0
+                tree.insert("", "end", values=fila)
+                ttk.Button(self.frame_datos, text="Eliminar",).grid(row=a, column=11, columnspan=1, pady=20)
+
+            # Cerrar conexión
+            conn.close()
+        
         self.limpiar_pantalla()
 
         frame = ttk.Frame(self.contenedor, style='BG.TFrame')
@@ -190,8 +226,16 @@ class App(tk.Tk):
             background="#F9F5F1"
         ).grid(row=0, column=0, pady=20)
 
-        ttk.Label(frame, text="(Pantalla en construcción)").grid(row=1, column=0, pady=15)
-
+        columnas = ("Id", "Cliente", "Documento", "Contacto", "Correo", "Direccion", "Personas", "FechaLlegada", "FechaSalida")
+        tree = ttk.Treeview(frame, columns=columnas, show="headings")
+        
+        for col in columnas:
+            tree.heading(col, text=col.capitalize())
+            tree.column(col, width=120)
+        
+        tree.grid(row=2, column=0, pady=10)
+        
+        cargar_datos()
 
     # -------------------------------------------------
     # BACKEND UI

@@ -1,8 +1,5 @@
 import sqlite3
-
-DB_PATH = "database/dolphin_green.db"
-
-from CRUD import fechas_validas
+from modulos.config import DB_PATH
 
 def obtener_parametros_servicios():
     conn = sqlite3.connect(DB_PATH)
@@ -42,7 +39,7 @@ def actualizar_parametros_servicios(id_parametros_cotizacion, valor_noche_cabana
         ValorAuxCocina = ?,
         Deposito = ?
         WHERE Id = ?
-    """, (valor_noche_cabana_temp_alta, valor_noche_cabana_temp_baja, valor_cocinera, valor_aux_cocina, deposito))
+    """, (valor_noche_cabana_temp_alta, valor_noche_cabana_temp_baja, valor_cocinera, valor_aux_cocina, deposito, id_parametros_cotizacion))
 
     conn.commit()
     conn.close()

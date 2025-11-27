@@ -16,7 +16,8 @@ CREATE TABLE IF NOT EXISTS Reserva(
     Direccion TEXT,
     NumeroPersonas INTEGER,
     FechaLlegada TEXT,
-    FechaSalida TEXT
+    FechaSalida TEXT,
+    Estado INTEGER DEFAULT 0
 )
 """)
 
@@ -48,5 +49,3 @@ cursor.execute("""
 
 conn.commit()
 conn.close()
-
-

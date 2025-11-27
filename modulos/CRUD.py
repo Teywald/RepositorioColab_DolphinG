@@ -1,9 +1,28 @@
 import sqlite3
 from datetime import datetime
-
 import os
+from modulos.config import DB_PATH
 
-DB_PATH = os.path.join(os.environ["LOCALAPPDATA"], "dolphin_green.db")
+def inicializar_bd():
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS Reserva (
+            Id INTEGER PRIMARY KEY AUTOINCREMENT,
+            NombreCliente TEXT NOT NULL,
+            Documento TEXT,
+            NumeroContacto TEXT NOT NULL,
+            Correo TEXT,
+            Direccion TEXT,
+            NumeroPersonas INTEGER NOT NULL,
+            FechaLlegada TEXT NOT NULL,
+            FechaSalida TEXT NOT NULL
+        );
+    """)
+
+    conn.commit()
+    conn.close()
 
 def fechas_validas(fecha_llegada, fecha_salida):
     try:
@@ -27,6 +46,23 @@ def disponibilidad_cabana(fecha_llegada, fecha_salida):
     conn.close()
 
     return conflicto is None
+
+def buscar_reservas(busqueda):
+    conn = sqlite3.connect(DB_PATH)  # ← CORREGIDO
+    cursor = conn.cursor()
+
+    query = """
+        SELECT *
+        FROM Reserva
+        WHERE NombreCliente LIKE ? OR Documento LIKE ?
+    """
+
+    like = f"%{busqueda}%"
+    cursor.execute(query, (like, like))
+    resultados = cursor.fetchall()
+    
+    conn.close()
+    return resultados
 
 
 def crear_reserva(nombre, documento, contacto, correo, direccion, num_personas, fecha_llegada, fecha_salida):
@@ -144,25 +180,3 @@ def eliminar_reserva(id_reserva):
     conn.close()
 
     print("Reserva eliminada    ")
-
-def inicializar_bd():
-    conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
-
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS Reserva (
-            Id INTEGER PRIMARY KEY AUTOINCREMENT,
-            NombreCliente TEXT NOT NULL,
-            Documento TEXT,
-            NumeroContacto TEXT NOT NULL,
-            Correo TEXT,
-            Direccion TEXT,
-            NumeroPersonas INTEGER NOT NULL,
-            FechaLlegada TEXT NOT NULL,
-            FechaSalida TEXT NOT NULL
-        );
-    """)
-
-    conn.commit()
-    conn.close()
-

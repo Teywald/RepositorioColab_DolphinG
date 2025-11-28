@@ -6,6 +6,7 @@ import sqlite3
 from modulos.config import DB_PATH
 from modulos.CRUD import *
 from modulos.servicios import *
+from modulos.temporada import *
 
 # Apariencia
 ctk.set_appearance_mode("system")
@@ -67,7 +68,8 @@ class App(ctk.CTk):
             "temporadas": self.crear_pantalla_temporadas,
             "crear_reserva": self.crear_pantalla_crear_reserva,
             "editar_reserva": self.crear_pantalla_editar_reserva,
-            "editar_servicios": self.crear_pantalla_editar_servicios
+            "editar_servicios": self.crear_pantalla_editar_servicios,
+            "crear_temporada": self.crear_pantalla_crear_temporada,
         }
 
         # Mostrar frame por defecto
@@ -358,10 +360,99 @@ class App(ctk.CTk):
         return frame
 
     def crear_pantalla_temporadas(self):
+
         frame = ctk.CTkFrame(self.main)
-        ctk.CTkLabel(frame, text="Administración de Temporadas", font=("", 24)).pack(pady=20)
+        frame.pack(fill="both", expand=True)
+
+        # Título
+        ctk.CTkLabel(frame, text="Temporadas", font=("", 24)).pack(pady=20)
+        
+        # --- TABLA ---
+        temporadas = obtener_temporadas()
+
+        self.headers_temp = ["ID", "Nombre", "Inicio", "Fin", "Editar", "Eliminar"]
+
+        tabla = []
+        tabla.append(self.headers_temp)
+
+        for t in temporadas:
+            fila = [t[0], t[1], t[2], t[3], "Editar", "Eliminar"]
+            tabla.append(fila)
+
+        self.tabla_temporadas = CTkTable(
+            frame,
+            values=tabla,
+            header_color="gray20",
+            colors=["gray15", "gray25"],
+            hover_color="gray30",
+            corner_radius=8,
+        )
+        self.tabla_temporadas.pack(padx=20, pady=20, fill="both", expand=True)
+
+        # --- BOTÓN CREAR ---
+        btn_crear_temp = ctk.CTkButton(
+            frame,
+            text="Nueva Temporada",
+            command=lambda: self.show_frame("crear_temporada")
+        )
+        btn_crear_temp.pack(padx=20, pady=10, side="right")
+
         return frame
 
+    def crear_pantalla_crear_temporada(self):
+
+        frame = ctk.CTkFrame(self.main)
+        frame.pack(fill="both", expand=True)
+
+        # Botón volver
+        boton_volver = ctk.CTkButton(
+            frame,
+            text="Volver",
+            fg_color="gray",
+            hover_color="#555555",
+            command=lambda: self.show_frame("temporadas")
+        )
+        boton_volver.pack(anchor="nw", padx=20, pady=20)
+
+        # --- CONTENEDOR CENTRADO ---
+        contenedor = ctk.CTkFrame(frame, fg_color="transparent")
+        contenedor.place(relx=0.5, rely=0.5, anchor="center")
+
+        # Título
+        ctk.CTkLabel(contenedor, text="Crear Temporada", font=("", 24)).grid(
+            row=0, column=0, columnspan=2, pady=20
+        )
+
+        # Variables
+        self.temp_nombre = ctk.StringVar()
+        self.temp_inicio = ctk.StringVar()
+        self.temp_fin = ctk.StringVar()
+
+        # Campos
+        campos = [
+            ("Nombre Temporada", self.temp_nombre),
+            ("Fecha Inicio (YYYY-MM-DD)", self.temp_inicio),
+            ("Fecha Fin (YYYY-MM-DD)", self.temp_fin),
+        ]
+
+        fila = 1
+        for texto, variable in campos:
+            ctk.CTkLabel(contenedor, text=texto).grid(row=fila, column=0, sticky="w", pady=5, padx=10)
+            ctk.CTkEntry(contenedor, textvariable=variable, width=220).grid(row=fila, column=1, pady=5)
+            fila += 1
+
+        # Botón crear
+        ctk.CTkButton(
+            contenedor,
+            text="Crear Temporada",
+            command=lambda: crear_temporada(
+                self.temp_nombre.get(),
+                self.temp_inicio.get(),
+                self.temp_fin.get()
+            )
+        ).grid(row=fila, column=0, columnspan=2, pady=20)
+
+        return frame
 
     # --- FUNCIÓN PARA CAMBIAR PANTALLAS ---
 

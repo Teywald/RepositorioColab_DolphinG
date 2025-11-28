@@ -370,13 +370,13 @@ class App(ctk.CTk):
         # --- TABLA ---
         temporadas = obtener_temporadas()
 
-        self.headers_temp = ["ID", "Nombre", "Inicio", "Fin", "Editar", "Eliminar"]
+        self.headers_temp = ["Nombre", "Inicio", "Fin", "Editar", "Eliminar"]
 
         tabla = []
         tabla.append(self.headers_temp)
 
         for t in temporadas:
-            fila = [t[0], t[1], t[2], t[3], "Editar", "Eliminar"]
+            fila = [t[1], t[2], t[3], "Editar", "Eliminar"]
             tabla.append(fila)
 
         self.tabla_temporadas = CTkTable(

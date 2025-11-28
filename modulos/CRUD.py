@@ -1,7 +1,7 @@
 import sqlite3
 from datetime import datetime
 import os
-from modulos.config import DB_PATH
+from config import DB_PATH
 
 def inicializar_bd():
     conn = sqlite3.connect(DB_PATH)

@@ -1,5 +1,5 @@
 import sqlite3
-from modulos.config import DB_PATH
+from config import DB_PATH
 
 def obtener_parametros_servicios():
     conn = sqlite3.connect(DB_PATH)

@@ -9,7 +9,7 @@ from modulos.servicios import *
 from modulos.temporada import *
 
 # Apariencia
-ctk.set_appearance_mode("system")
+ctk.set_appearance_mode("dark")
 ctk.set_default_color_theme("green")
 
 class App(ctk.CTk):
@@ -18,7 +18,7 @@ class App(ctk.CTk):
         super().__init__()
 
         self.title("Dolphin Green")     # Nombre
-        self.geometry("900x600")        # Tamaño APP
+        self.geometry("1200x600")        # Tamaño APP
         self.iconbitmap('icon.ico')     # Icono APP
 
         self.grid_rowconfigure(0, weight=1)
@@ -37,12 +37,6 @@ class App(ctk.CTk):
             command=lambda: self.show_frame("reservas")
         )
         self.boton_reserva.pack(padx=20, pady=10)
-
-        self.boton_calendario = ctk.CTkButton(
-            self.barra_lateral, text="Calendario",
-            command=lambda: self.show_frame("calendario")
-        )
-        self.boton_calendario.pack(padx=20, pady=10)
 
         self.boton_servicio = ctk.CTkButton(
             self.barra_lateral, text="Servicios",
@@ -63,7 +57,6 @@ class App(ctk.CTk):
         # Diccionario de pantallas
         self.pantallas = {
             "reservas": self.crear_pantalla_reservas,
-            "calendario": self.crear_pantalla_calendario,
             "servicios": self.crear_pantalla_servicios,
             "temporadas": self.crear_pantalla_temporadas,
             "crear_reserva": self.crear_pantalla_crear_reserva,
@@ -246,11 +239,6 @@ class App(ctk.CTk):
             command=lambda: crear_reserva(self.nombre_cliente.get(), self.cedula.get(), self.telefono.get(), self.correo.get(), self.direccion.get(), self.num_personas.get(), self.fecha_ent.get(), self.fecha_sal.get())
         ).grid(row=fila, column=0, columnspan=2, pady=20)
 
-        return frame
-
-    def crear_pantalla_calendario(self):
-        frame = ctk.CTkFrame(self.main)
-        ctk.CTkLabel(frame, text="Calendario", font=("", 24)).pack(pady=20)
         return frame
 
     def crear_pantalla_servicios(self):

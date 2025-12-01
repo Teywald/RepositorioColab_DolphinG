@@ -32,7 +32,6 @@ def fechas_validas(fecha_llegada, fecha_salida):
     except:
         return False
 
-
 def disponibilidad_cabana(fecha_llegada, fecha_salida):
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()

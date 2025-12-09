@@ -9,7 +9,7 @@ from modulos.servicios import *
 from modulos.temporada import *
 
 # Apariencia
-ctk.set_appearance_mode("dark")
+ctk.set_appearance_mode("light")
 ctk.set_default_color_theme("green")
 
 class App(ctk.CTk):
@@ -19,7 +19,8 @@ class App(ctk.CTk):
 
         self.title("Dolphin Green")     # Nombre
         self.geometry("1200x600")        # Tamaño APP
-        self.iconbitmap('icon.ico')     # Icono APP
+        ruta_icono = os.path.join(os.path.dirname(__file__), "icon.ico")
+        self.iconbitmap(ruta_icono)
 
         self.grid_rowconfigure(0, weight=1)
         self.grid_columnconfigure(1, weight=1)
@@ -37,6 +38,12 @@ class App(ctk.CTk):
             command=lambda: self.show_frame("reservas")
         )
         self.boton_reserva.pack(padx=20, pady=10)
+        
+        self.boton_temporada = ctk.CTkButton(
+            self.barra_lateral, text="Gestion Reservas",
+            command=lambda: self.show_frame("gestion_reserva")
+        )
+        self.boton_temporada.pack(padx=20, pady=10)
 
         self.boton_servicio = ctk.CTkButton(
             self.barra_lateral, text="Servicios",
@@ -47,6 +54,11 @@ class App(ctk.CTk):
         self.boton_temporada = ctk.CTkButton(
             self.barra_lateral, text="Temporadas",
             command=lambda: self.show_frame("temporadas")
+        )
+        self.boton_temporada.pack(padx=20, pady=10)
+        self.boton_temporada = ctk.CTkButton(
+            self.barra_lateral, text="Gestion Temporadas",
+            command=lambda: self.show_frame("gestion_temporada")
         )
         self.boton_temporada.pack(padx=20, pady=10)
 
@@ -63,6 +75,10 @@ class App(ctk.CTk):
             "editar_reserva": self.crear_pantalla_editar_reserva,
             "editar_servicios": self.crear_pantalla_editar_servicios,
             "crear_temporada": self.crear_pantalla_crear_temporada,
+            "gestion_reserva": self.crear_pantalla_gestion_reserva,
+            "gestion_temporada": self.crear_pantalla_gestion_temporada,
+            "editar_temporada": self.crear_pantalla_editar_temporada,
+            
         }
 
         # Mostrar frame por defecto
@@ -84,40 +100,37 @@ class App(ctk.CTk):
 
         self.busqueda = ctk.StringVar()
 
-        ctk.CTkLabel(search_frame, text="Buscar:").pack(side="left", padx=5)
+        ctk.CTkLabel(search_frame, text="Buscar:").pack(side="left", padx=10)
         entry_buscar = ctk.CTkEntry(search_frame, textvariable=self.busqueda, width=200)
-        entry_buscar.pack(side="left", padx=5)
+        entry_buscar.pack(side="left", padx=10)
 
         btn_buscar = ctk.CTkButton(search_frame, text="Buscar", command=self.actualizar_tabla_reservas)
-        btn_buscar.pack(side="left", padx=5)
+        btn_buscar.pack(side="left", padx=10)
 
         # --- TABLA INICIAL ---
         self.reservas_actuales = obtener_reservas()     # ahora guardamos las reservas vigentes
 
         self.headers = [
-            "Cliente", "Documento", "Contacto",
+            "Id", "Cliente", "Documento", "Contacto",
             "Correo", "Dirección", "# Personas",
-            "Llegada", "Salida", "Confirmar", "Editar", "Eliminar"
+            "Llegada", "Salida"
         ]
 
         self.tabla_reservas = CTkTable(
             frame,
             values=self.construir_tabla(self.reservas_actuales),
-            header_color="gray20",
-            colors=["gray15", "gray25"],
-            hover_color="gray30",
+            header_color="#f0f0f0",
+            colors=["gray90", "gray80"],
+            hover_color="#e6e6e6",
             corner_radius=8,
         )
 
         self.tabla_reservas.pack(padx=20, pady=20, fill="both", expand=True)
 
         # --- BOTON CREAR ---
-        self.boton_crear_reserva = ctk.CTkButton(
-            frame, text="Nueva Reserva",
-            command=lambda: self.show_frame("crear_reserva")
-        )
+        self.boton_crear_reserva = ctk.CTkButton( frame, text="Nueva Reserva", command=lambda: self.show_frame("crear_reserva") ) 
         self.boton_crear_reserva.pack(padx=20, pady=10, side="right")
-
+        
         return frame
     
     def crear_pantalla_crear_reserva(self):
@@ -181,6 +194,42 @@ class App(ctk.CTk):
 
         return frame
 
+    def crear_pantalla_gestion_reserva(self):
+        frame = ctk.CTkFrame(self.main)
+        frame.pack(fill="both", expand=True)
+
+        ctk.CTkLabel(frame, text="Gestion Reservas", font=("", 24)).pack(pady=20)
+        
+        # INGRESO ID
+        id_frame = ctk.CTkFrame(frame, fg_color="transparent")
+        id_frame.pack(pady=10)
+
+        self.busqueda = ctk.StringVar()
+
+        ctk.CTkLabel(id_frame, text="Ingresar Id:").pack(side="left", padx=5)
+        entry_buscar = ctk.CTkEntry(id_frame, textvariable=self.busqueda, width=200)
+        entry_buscar.pack(side="left", padx=5)
+        
+        # --- FRAME BOTONES ---
+        botones_frame = ctk.CTkFrame(frame, fg_color="transparent")
+        botones_frame.pack(pady=10)
+
+        # --- BOTONES --- 
+        ctk.CTkButton(botones_frame, text="Editar Reserva",
+                    command=lambda: self.show_frame("editar_reserva")
+                    ).pack(padx=10, side="left")
+
+        ctk.CTkButton(botones_frame, text="Eliminar Reserva",
+                    ).pack(padx=10, side="left")
+
+        ctk.CTkButton(botones_frame, text="Confirmar Reserva",
+                    ).pack(padx=10, side="left")
+
+        ctk.CTkButton(botones_frame, text="Cotización Reserva",
+                    ).pack(padx=10, side="left")
+        
+        return frame
+
     def crear_pantalla_editar_reserva(self):
         frame = ctk.CTkFrame(self.main)
         frame.pack(fill="both", expand=True)
@@ -190,7 +239,7 @@ class App(ctk.CTk):
             text="Volver",
             fg_color="gray",
             hover_color="#555555",
-            command=lambda: self.show_frame("reservas")
+            command=lambda: self.show_frame("gestion_reserva")
         )
         boton_volver.pack(anchor="nw", padx=20, pady=20)
 
@@ -199,7 +248,7 @@ class App(ctk.CTk):
         contenedor.place(relx=0.5, rely=0.5, anchor="center")
 
         # TITULO
-        ctk.CTkLabel(contenedor, text="Crear Reserva", font=("", 24)).grid(
+        ctk.CTkLabel(contenedor, text="Editar Reserva", font=("", 24)).grid(
             row=0, column=0, columnspan=2, pady=20
         )
 
@@ -235,7 +284,7 @@ class App(ctk.CTk):
         # BOTÓN CREAR
         ctk.CTkButton(
             contenedor,
-            text="Crear Reserva",
+            text="Editar Reserva",
             command=lambda: crear_reserva(self.nombre_cliente.get(), self.cedula.get(), self.telefono.get(), self.correo.get(), self.direccion.get(), self.num_personas.get(), self.fecha_ent.get(), self.fecha_sal.get())
         ).grid(row=fila, column=0, columnspan=2, pady=20)
 
@@ -358,13 +407,13 @@ class App(ctk.CTk):
         # --- TABLA ---
         temporadas = obtener_temporadas()
 
-        self.headers_temp = ["Nombre", "Inicio", "Fin", "Editar", "Eliminar"]
+        self.headers_temp = ["Id","Nombre", "Inicio", "Fin",]
 
         tabla = []
         tabla.append(self.headers_temp)
 
         for t in temporadas:
-            fila = [t[1], t[2], t[3], "Editar", "Eliminar"]
+            fila = t
             tabla.append(fila)
 
         self.tabla_temporadas = CTkTable(
@@ -442,6 +491,85 @@ class App(ctk.CTk):
 
         return frame
 
+    def crear_pantalla_gestion_temporada(self):
+        frame = ctk.CTkFrame(self.main)
+        frame.pack(fill="both", expand=True)
+
+        ctk.CTkLabel(frame, text="Gestion Temporadas", font=("", 24)).pack(pady=20)
+        
+        # INGRESO ID
+        id_frame = ctk.CTkFrame(frame, fg_color="transparent")
+        id_frame.pack(pady=10)
+
+        self.busqueda = ctk.StringVar()
+
+        ctk.CTkLabel(id_frame, text="Ingresar Id:").pack(side="left", padx=5)
+        entry_buscar = ctk.CTkEntry(id_frame, textvariable=self.busqueda, width=200)
+        entry_buscar.pack(side="left", padx=5)
+        
+        # --- FRAME BOTONES ---
+        botones_frame = ctk.CTkFrame(frame, fg_color="transparent")
+        botones_frame.pack(pady=10)
+
+        # --- BOTONES --- 
+        ctk.CTkButton(botones_frame, text="Editar Temporada",
+                    command=lambda: self.show_frame("editar_temporada")
+                    ).pack(padx=10, side="left")
+
+        ctk.CTkButton(botones_frame, text="Eliminar Temporada",
+                    ).pack(padx=10, side="left")
+        
+        return frame
+
+    def crear_pantalla_editar_temporada(self):
+        frame = ctk.CTkFrame(self.main)
+        frame.pack(fill="both", expand=True)
+        
+        boton_volver = ctk.CTkButton(
+            frame,
+            text="Volver",
+            fg_color="gray",
+            hover_color="#555555",
+            command=lambda: self.show_frame("gestion_temporada")
+        )
+        boton_volver.pack(anchor="nw", padx=20, pady=20)
+
+        # --- CONTENEDOR CENTRADO ---
+        contenedor = ctk.CTkFrame(frame, fg_color="transparent")
+        contenedor.place(relx=0.5, rely=0.5, anchor="center")
+
+        # TITULO
+        ctk.CTkLabel(contenedor, text="Editar Temporada", font=("", 24)).grid(
+            row=0, column=0, columnspan=2, pady=20
+        )
+
+        # -------- VARIABLES --------
+        self.temp_nombre = ctk.StringVar()
+        self.temp_inicio = ctk.StringVar()
+        self.temp_fin = ctk.StringVar()
+
+        # -------- FORMULARIO --------
+        campos = [
+            ("Nombre Temporada", self.temp_nombre),
+            ("Fecha Inicio (YYYY-MM-DD)", self.temp_inicio),
+            ("Fecha Fin (YYYY-MM-DD)", self.temp_fin),
+        ]
+
+        fila = 1
+        for texto, variable in campos:
+            ctk.CTkLabel(contenedor, text=texto).grid(row=fila, column=0, sticky="w", pady=5, padx=10)
+            ctk.CTkEntry(contenedor, textvariable=variable, width=220).grid(row=fila, column=1, pady=5)
+            fila += 1
+
+        # BOTÓN CREAR
+        ctk.CTkButton(
+            contenedor,
+            text="Editar Temporada",
+            command=lambda: crear_reserva(self.nombre_cliente.get(), self.cedula.get(), self.telefono.get(), self.correo.get(), self.direccion.get(), self.num_personas.get(), self.fecha_ent.get(), self.fecha_sal.get())
+        ).grid(row=fila, column=0, columnspan=2, pady=20)
+
+        return frame
+
     # --- FUNCIÓN PARA CAMBIAR PANTALLAS ---
 
     def show_frame(self, frame_name):
@@ -458,8 +586,7 @@ class App(ctk.CTk):
         data = [self.headers]
 
         for r in reservas:
-            fila = list(r)[1:-1]  # quitar ID
-            fila += ["Confirmar", "Editar", "Eliminar"]
+            fila = list(r)
             data.append(fila)
 
         return data

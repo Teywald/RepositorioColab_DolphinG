@@ -38,13 +38,23 @@ def disponibilidad_cabana(fecha_llegada, fecha_salida):
 
     cursor.execute("""
         SELECT * FROM Reserva 
-        WHERE NOT (FechaSalida <= ? OR FechaLlegada >= ?)
-    """, (fecha_salida, fecha_llegada))
+        WHERE NOT (FechaSalida <= ? OR FechaLlegada >= ? AND Estado = ?) 
+    """, (fecha_salida, fecha_llegada, 1))
 
     conflicto = cursor.fetchone()
     conn.close()
 
     return conflicto is None
+
+def confirmar_cabana(id):
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    
+    cursor.execute("""
+        UPDATE Reserva
+        SET Estado = 1
+        WHERE Id = ?
+    """, (id))
 
 def buscar_reservas(busqueda):
     conn = sqlite3.connect(DB_PATH)  # ← CORREGIDO

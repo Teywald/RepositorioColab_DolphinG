@@ -17,7 +17,8 @@ def inicializar_bd():
             Direccion TEXT,
             NumeroPersonas INTEGER NOT NULL,
             FechaLlegada TEXT NOT NULL,
-            FechaSalida TEXT NOT NULL
+            FechaSalida TEXT NOT NULL,
+            Estado INTEGER DEFAULT 0
         );
     """)
 
@@ -35,11 +36,12 @@ def fechas_validas(fecha_llegada, fecha_salida):
 def disponibilidad_cabana(fecha_llegada, fecha_salida):
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
-
+    # Considera sólo reservas no confirmadas (Estado != 1) para disponibilidad
     cursor.execute("""
-        SELECT * FROM Reserva 
-        WHERE NOT (FechaSalida <= ? OR FechaLlegada >= ? AND Estado = ?) 
-    """, (fecha_salida, fecha_llegada, 1))
+        SELECT * FROM Reserva
+        WHERE Estado != 1
+        AND NOT (FechaSalida <= ? OR FechaLlegada >= ?)
+    """, (fecha_salida, fecha_llegada))
 
     conflicto = cursor.fetchone()
     conn.close()
@@ -55,6 +57,17 @@ def confirmar_cabana(id):
         SET Estado = 1
         WHERE Id = ?
     """, (id))
+    conn.commit()
+    conn.close()
+
+
+def obtener_reserva_por_id(id_reserva):
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM Reserva WHERE Id = ?", (id_reserva,))
+    reserva = cursor.fetchone()
+    conn.close()
+    return reserva
 
 def buscar_reservas(busqueda):
     conn = sqlite3.connect(DB_PATH)  # ← CORREGIDO
@@ -173,14 +186,44 @@ def actualizar_reserva(id_reserva, nuevo_contacto, nueva_fecha_llegada, nueva_fe
     print("Reserva actualizada.")
 
 
+def actualizar_reserva_completa(id_reserva, nombre, documento, contacto, correo, direccion, num_personas, fecha_llegada, fecha_salida):
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
 
-def eliminar_reserva(id_reserva):
-    confirm = input(f"¿Seguro que deseas eliminar la reserva {id_reserva}? (s/n): ")
+    cursor.execute("SELECT * FROM Reserva WHERE Id = ?", (id_reserva,))
+    reserva_original = cursor.fetchone()
 
-    if confirm.lower() != "s":
-        print("Operación cancelada.")
+    if reserva_original is None:
+        print("Error: No existe una reserva con ese ID.")
+        conn.close()
         return
 
+    # Validaciones básicas
+    if not contacto or not num_personas or not fecha_llegada or not fecha_salida:
+        print("Error: Campos obligatorios incompletos.")
+        conn.close()
+        return
+
+    if not fechas_validas(fecha_llegada, fecha_salida):
+        print("Error: Las fechas no son válidas.")
+        conn.close()
+        return
+
+    cursor.execute("""
+        UPDATE Reserva
+        SET NombreCliente = ?, Documento = ?, NumeroContacto = ?, Correo = ?, Direccion = ?, NumeroPersonas = ?, FechaLlegada = ?, FechaSalida = ?
+        WHERE Id = ?
+    """, (nombre, documento, contacto, correo, direccion, num_personas, fecha_llegada, fecha_salida, id_reserva))
+
+    conn.commit()
+    conn.close()
+
+    print("Reserva actualizada (completa).")
+
+
+
+def eliminar_reserva(id_reserva):
+    # Eliminación sin interacción por consola para uso desde UI
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
 
@@ -188,4 +231,13 @@ def eliminar_reserva(id_reserva):
     conn.commit()
     conn.close()
 
-    print("Reserva eliminada    ")
+    print("Reserva eliminada")
+
+
+def confirmar_reserva_por_id(id_reserva):
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    cursor.execute("UPDATE Reserva SET Estado = 1 WHERE Id = ?", (id_reserva,))
+    conn.commit()
+    conn.close()
+    

@@ -3,10 +3,23 @@ import tkinter.ttk as ttk
 from CTkTable import CTkTable
 import os
 import sqlite3
+from tkinter import messagebox
 from modulos.config import DB_PATH
 from modulos.CRUD import *
 from modulos.servicios import *
 from modulos.temporada import *
+
+# Importar la función obtener_reserva_por_id si está en CRUD.py
+try:
+    from modulos.CRUD import obtener_reserva_por_id
+    from modulos.CRUD import actualizar_reserva_completa
+    from modulos.CRUD import confirmar_reserva_por_id
+    from modulos.CRUD import eliminar_reserva
+except ImportError:
+    # Si no existe, define un stub temporal para evitar errores de compilación
+    def obtener_reserva_por_id(id_res):
+        # TODO: Implementar esta función en modulos/CRUD.py
+        return None
 
 # Apariencia
 ctk.set_appearance_mode("light")
@@ -113,7 +126,7 @@ class App(ctk.CTk):
         self.headers = [
             "Id", "Cliente", "Documento", "Contacto",
             "Correo", "Dirección", "# Personas",
-            "Llegada", "Salida"
+            "Llegada", "Salida", "Estado"
         ]
 
         self.tabla_reservas = CTkTable(
@@ -216,14 +229,16 @@ class App(ctk.CTk):
 
         # --- BOTONES --- 
         ctk.CTkButton(botones_frame, text="Editar Reserva",
-                    command=lambda: self.show_frame("editar_reserva")
-                    ).pack(padx=10, side="left")
+                command=lambda: self.iniciar_edicion_reserva()
+                ).pack(padx=10, side="left")
 
         ctk.CTkButton(botones_frame, text="Eliminar Reserva",
-                    ).pack(padx=10, side="left")
+                command=lambda: self.eliminar_reserva_ui()
+                ).pack(padx=10, side="left")
 
         ctk.CTkButton(botones_frame, text="Confirmar Reserva",
-                    ).pack(padx=10, side="left")
+                command=lambda: self.confirmar_reserva_ui()
+                ).pack(padx=10, side="left")
 
         ctk.CTkButton(botones_frame, text="Cotización Reserva",
                     ).pack(padx=10, side="left")
@@ -263,6 +278,22 @@ class App(ctk.CTk):
         self.fecha_sal = ctk.StringVar()
         self.noches_var = ctk.StringVar(value="-")
 
+        # Si venimos de la gestión y hay una reserva cargada, precargar valores
+        if hasattr(self, 'editing_reserva_data') and self.editing_reserva_data:
+            r = self.editing_reserva_data
+            # r expected as tuple: (Id, NombreCliente, Documento, NumeroContacto, Correo, Direccion, NumeroPersonas, FechaLlegada, FechaSalida, Estado)
+            try:
+                self.nombre_cliente.set(r[1])
+                self.cedula.set(r[2])
+                self.telefono.set(r[3])
+                self.correo.set(r[4])
+                self.direccion.set(r[5])
+                self.num_personas.set(str(r[6]))
+                self.fecha_ent.set(r[7])
+                self.fecha_sal.set(r[8])
+            except Exception:
+                pass
+
         # -------- FORMULARIO --------
         campos = [
             ("Nombre Cliente", self.nombre_cliente),
@@ -281,11 +312,11 @@ class App(ctk.CTk):
             ctk.CTkEntry(contenedor, textvariable=variable, width=220).grid(row=fila, column=1, pady=5)
             fila += 1
 
-        # BOTÓN CREAR
+        # BOTÓN GUARDAR CAMBIOS
         ctk.CTkButton(
             contenedor,
-            text="Editar Reserva",
-            command=lambda: crear_reserva(self.nombre_cliente.get(), self.cedula.get(), self.telefono.get(), self.correo.get(), self.direccion.get(), self.num_personas.get(), self.fecha_ent.get(), self.fecha_sal.get())
+            text="Guardar Cambios",
+            command=lambda: self.guardar_cambios_reserva()
         ).grid(row=fila, column=0, columnspan=2, pady=20)
 
         return frame
@@ -603,6 +634,95 @@ class App(ctk.CTk):
         data = self.construir_tabla(self.reservas_actuales)
 
         self.tabla_reservas.configure(values=data)
+
+
+    # --- Métodos UI para gestión de reservas ---
+    def iniciar_edicion_reserva(self):
+        id_str = self.busqueda.get().strip()
+        if not id_str:
+            messagebox.showerror("Error", "Ingrese un Id de reserva.")
+            return
+        try:
+            id_res = int(id_str)
+        except ValueError:
+            messagebox.showerror("Error", "Id inválido. Debe ser un número.")
+            return
+
+        reserva = obtener_reserva_por_id(id_res)
+        if not reserva:
+            messagebox.showerror("Error", f"No se encontró la reserva con Id {id_res}.")
+            return
+
+        # Guardar en memoria y mostrar pantalla de edición
+        self.editing_reserva_data = reserva
+        self.editing_id = id_res
+        self.show_frame("editar_reserva")
+
+    def eliminar_reserva_ui(self):
+        id_str = self.busqueda.get().strip()
+        if not id_str:
+            messagebox.showerror("Error", "Ingrese un Id de reserva.")
+            return
+        try:
+            id_res = int(id_str)
+        except ValueError:
+            messagebox.showerror("Error", "Id inválido. Debe ser un número.")
+            return
+
+        ok = messagebox.askyesno("Confirmar", f"¿Eliminar la reserva {id_res}?")
+        if not ok:
+            return
+
+        eliminar_reserva(id_res)
+        messagebox.showinfo("Éxito", "Reserva eliminada.")
+        # Volver a la lista de reservas para actualizar
+        self.show_frame("reservas")
+
+    def confirmar_reserva_ui(self):
+        id_str = self.busqueda.get().strip()
+        if not id_str:
+            messagebox.showerror("Error", "Ingrese un Id de reserva.")
+            return
+        try:
+            id_res = int(id_str)
+        except ValueError:
+            messagebox.showerror("Error", "Id inválido. Debe ser un número.")
+            return
+
+        ok = messagebox.askyesno("Confirmar", f"¿Confirmar la reserva {id_res}? Esto marcará la reserva como confirmada.")
+        if not ok:
+            return
+
+        confirmar_reserva_por_id(id_res)
+        messagebox.showinfo("Éxito", "Reserva confirmada.")
+        self.show_frame("reservas")
+
+    def guardar_cambios_reserva(self):
+        if not hasattr(self, 'editing_id'):
+            messagebox.showerror("Error", "No hay una reserva cargada para editar.")
+            return
+
+        id_res = self.editing_id
+
+        nombre = self.nombre_cliente.get()
+        documento = self.cedula.get()
+        contacto = self.telefono.get()
+        correo = self.correo.get()
+        direccion = self.direccion.get()
+        num_personas = self.num_personas.get()
+        fecha_ent = self.fecha_ent.get()
+        fecha_sal = self.fecha_sal.get()
+
+        # Llamar a la función de actualización completa
+        actualizar_reserva_completa(id_res, nombre, documento, contacto, correo, direccion, num_personas, fecha_ent, fecha_sal)
+        messagebox.showinfo("Éxito", "Reserva actualizada correctamente.")
+        # limpiar estado de edición
+        if hasattr(self, 'editing_reserva_data'):
+            del self.editing_reserva_data
+        if hasattr(self, 'editing_id'):
+            del self.editing_id
+
+        self.show_frame("reservas")
 
 app = App()
 app.mainloop()
